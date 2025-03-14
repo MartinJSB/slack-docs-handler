@@ -1,4 +1,5 @@
 from slack_bolt import App
+from slack_bolt.context.respond import Respond
 
 def register_events(slack_app: App):
     @slack_app.event("message")
