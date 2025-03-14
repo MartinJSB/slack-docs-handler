@@ -8,6 +8,7 @@ def register_events(slack_app: App):
         user_id = event.get("user", "")  # Get user ID
         say(f"Hello <@{user_id}>! You said: {user_text}")
 
-    @slack_app.command("/upload")
+    @slack_app.command("/upload_meeting")
     def handle_upload(ack, respond: Respond, command):
         ack()  
+        respond(f"Received your file: {command['text']}")
