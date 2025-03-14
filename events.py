@@ -10,7 +10,4 @@ def register_events(slack_app: App):
 
     @slack_app.command("/upload")
     def handle_upload(ack, respond: Respond, command):
-        ack()  # Acknowledge the command
-        user_text = command.get("text", "")  # Get the text user entered
-        user_id = command.get("user_id")  # Get user ID
-        respond(f"📤 You uploaded: *{user_text}* (from <@{user_id}>)")
+        ack()  

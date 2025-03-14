@@ -24,9 +24,22 @@ def hello():
 
 @app.route("/", methods=["POST"])
 def slack_events():
-    data = request.get_json()
-    if "challenge" in data:
-        return jsonify({"challenge": data["challenge"]})
+    """Handles both Slack Events (JSON) and Slash Commands (x-www-form-urlencoded)"""
+    
+    if request.content_type == "application/json":
+        data = request.get_json()
+        if "challenge" in data:
+            return jsonify({"challenge": data["challenge"]})
+
+    elif request.content_type == "application/x-www-form-urlencoded":
+        form_data = request.form.to_dict()
+        command = form_data.get("command")
+        
+        if command == "/upload":
+            return jsonify({"response_type": "in_channel", "text": "Upload command received!"})
+
+    else:
+        return jsonify({"error": "Unsupported Media Type"}), 415
 
     return handler.handle(request) 
 
