@@ -4,7 +4,7 @@ import subprocess
 import uuid
 import gdown
 
-def download_audio_from_drive(drive_url, output_audio=f"output_{uuid.uuid4().hex}.mp3"):
+def download_audio_from_drive(drive_url, output_audio=f"output_{uuid.uuid4().hex}.wav"):
     try:
         # Extract file ID from a typical Google Drive share link.
         file_id_match = re.search(r"/d/([^/]+)", drive_url)
@@ -26,14 +26,13 @@ def download_audio_from_drive(drive_url, output_audio=f"output_{uuid.uuid4().hex
         except Exception as e:
             raise Exception(f"Failed to download video: {e}")
         
-        # Prepare and run the ffmpeg command to extract audio.
+        # Prepare and run the ffmpeg command to extract audio as WAV.
         command = [
             "ffmpeg",
             "-i", temp_video,
             "-vn",             # disable video stream
-            "-acodec", "libmp3lame",
+            "-acodec", "pcm_s16le",  # WAV format
             "-ac", "2",
-            "-ab", "192k",
             "-ar", "44100",
             output_audio
         ]
@@ -46,7 +45,6 @@ def download_audio_from_drive(drive_url, output_audio=f"output_{uuid.uuid4().hex
         try:
             os.remove(temp_video)
         except Exception as e:
-            # Log a warning; failure here is not critical.
             print(f"Warning: Failed to delete temporary file {temp_video}: {e}")
         
         # Return success response.

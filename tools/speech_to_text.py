@@ -1,73 +1,74 @@
-#!/usr/bin/env python3
+import requests
+import json
 import os
-import time
-import argparse
-import azure.cognitiveservices.speech as speechsdk
-from azure.cognitiveservices.speech.transcription import ConversationTranscriber
-from dotenv import load_dotenv
 
-def transcribe_audio(audio_filename):
-    # Load credentials from .env (AZURE_SPEECH_KEY and AZURE_REGION)
+def transcribe_audio(file_path):
+    """
+    Transcribes an audio file using the Azure fast transcription API with diarization enabled.
+    
+    Parameters:
+        file_path (str): Path to the local audio file.
+    
+    Returns:
+        str: The transcribed text or an error message.
+    """
+    # Construct the endpoint URL (using the fast transcription API)
     speech_key = os.getenv("AZURE_SPEECH_KEY")
     service_region = os.getenv("AZURE_REGION")
-    if not speech_key or not service_region:
-        print("Error: AZURE_SPEECH_KEY and AZURE_REGION must be set in your environment.")
-        exit(1)
 
-    speech_config = speechsdk.SpeechConfig(subscription=speech_key, region=service_region)
-    speech_config.output_format = speechsdk.OutputFormat.Detailed
+    url = f"https://{service_region}.api.cognitive.microsoft.com/speechtotext/transcriptions:transcribe?api-version=2024-11-15"
+    
+    # Read the audio file in binary mode
+    try:
+        with open(file_path, "rb") as audio_file:
+            audio_data = audio_file.read()
+    except Exception as e:
+        return f"Error reading file: {e}"
+    
+    # Prepare the JSON definition to set the locale and enable diarization
+    definition = {
+        "locales": ["en-US"],
+        "diarization": {"maxSpeakers": 2, "enabled": True}
+    }
+    
+    # Create the multipart/form-data payload.
+    # The "audio" field holds the file content,
+    # The "definition" field holds the JSON configuration.
+    files = {
+        "audio": (file_path, audio_data),
+        "definition": (None, json.dumps(definition), "application/json")
+    }
+    
+    # Set the subscription key header
+    headers = {
+        "Ocp-Apim-Subscription-Key": speech_key
+    }
+    
+    # Make the POST request to the fast transcription endpoint
+    response = requests.post(url, headers=headers, files=files)
+    
+    # Check for a successful response
+    if response.status_code == 200:
+        try:
+            result = response.json()
+            print(result)
+            # Extract the transcribed text from "combinedPhrases"
+            if "combinedPhrases" in result and result["combinedPhrases"]:
+                transcription = "\n".join(phrase["text"] for phrase in result["combinedPhrases"])
+                return transcription
+            else:
+                return "Transcription completed but no 'combinedPhrases' found in the response."
+        except Exception as e:
+            return f"Error parsing JSON response: {e}"
+    else:
+        return f"API error {response.status_code}: {response.text}"
 
-    # Create an audio configuration from the file.
-    audio_config = speechsdk.audio.AudioConfig(filename=audio_filename)
-
-    # Create a ConversationTranscriber instance.
-    transcriber = ConversationTranscriber(speech_config=speech_config, audio_config=audio_config)
-
-    done = False
-    transcription_results = []
-
-    # Callback for when a final result is received.
-    def transcribed_cb(evt):
-        result = evt.result
-        if result.reason == speechsdk.ResultReason.Transcribed:
-            # Attempt to get speaker information; if not available, use "unknown".
-            speaker = getattr(result, "speaker_id", "unknown")
-            print(f"Speaker {speaker}: {result.text}")
-            transcription_results.append((speaker, result.text))
-        else:
-            print(f"Interim result: {result.text}")
-
-    # Callback to signal the session has ended.
-    def stop_cb(evt):
-        nonlocal done
-        print("Transcription session ended.")
-        done = True
-
-    # Connect the event handlers.
-    transcriber.transcribed.connect(transcribed_cb)
-    transcriber.session_stopped.connect(stop_cb)
-    transcriber.canceled.connect(stop_cb)
-
-    print("Starting transcription...")
-    transcriber.start_transcribing()
-
-    # Wait until the transcription session ends.
-    while not done:
-        time.sleep(0.5)
-
-    transcriber.stop_transcribing()
-    return transcription_results
-
-def main():
-    parser = argparse.ArgumentParser(description="Diarized transcription using Azure Speech Service")
-    parser.add_argument("audio_file", help="Path to the audio file")
-    args = parser.parse_args()
-
-    results = transcribe_audio(args.audio_file)
-    print("\nFinal Transcription Results:")
-    for speaker, text in results:
-        print(f"Speaker {speaker}: {text}")
-
+# Example usage:
 if __name__ == "__main__":
-    load_dotenv()  # Load environment variables from .env
-    main()
+    
+    # Replace with the path to your audio file
+    audio_file_path = "output_e4ef7375f8354db59b67c08866726bb9.wav"
+    
+    transcript = transcribe_audio(audio_file_path)
+    print("Transcription Result:")
+    print(transcript)
