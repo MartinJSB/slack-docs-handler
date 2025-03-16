@@ -51,13 +51,16 @@ def transcribe_audio(file_path):
     if response.status_code == 200:
         try:
             result = response.json()
-            print(result)
-            # Extract the transcribed text from "combinedPhrases"
-            if "combinedPhrases" in result and result["combinedPhrases"]:
-                transcription = "\n".join(phrase["text"] for phrase in result["combinedPhrases"])
-                return transcription
+            if "phrases" in result and result["phrases"]:
+                # transcription = "\n".join(phrase["text"] for phrase in result["phrases"])
+                dialogue = ""
+                for entry in result["phrases"]:
+                    speaker = entry.get("speaker", "Unknown")
+                    text = entry.get("text", "")
+                    dialogue += f"Speaker {speaker}:\n{text}\n\n"
+                return dialogue
             else:
-                return "Transcription completed but no 'combinedPhrases' found in the response."
+                return "Transcription completed but no 'phrases' found in the response."
         except Exception as e:
             return f"Error parsing JSON response: {e}"
     else:
@@ -67,7 +70,7 @@ def transcribe_audio(file_path):
 if __name__ == "__main__":
     
     # Replace with the path to your audio file
-    audio_file_path = "output_e4ef7375f8354db59b67c08866726bb9.wav"
+    audio_file_path = "your_file.wav"
     
     transcript = transcribe_audio(audio_file_path)
     print("Transcription Result:")
