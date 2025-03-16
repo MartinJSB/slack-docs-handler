@@ -2,6 +2,7 @@ from slack_bolt import App
 from slack_bolt.context.respond import Respond
 
 from tools.drive_video_to_audio import download_audio_from_drive
+from tools.speech_to_text import transcribe_audio
 
 def register_events(slack_app: App):
     @slack_app.event("message")
@@ -30,11 +31,11 @@ def register_events(slack_app: App):
                 return
 
             # Attempt to download the video and extract the audio.
-            result = download_audio_from_drive(drive_link)
-            if result["status"] == "success":
-                respond(result["message"])
-                # Optionally: upload the audio file to persistent storage and send its URL.
-            else:
-                respond(f"Error: {result['message']}")
+            audio_result = download_audio_from_drive(drive_link)
+            if audio_result["status"] != "success":
+                respond(f"Error: {audio_result['message']}")
+            
+            transcription_result = transcribe_audio(audio_result["file_path"])
+            respond(transcription_result)
         except Exception as e:
             respond(f"An unexpected error occurred: {str(e)}")

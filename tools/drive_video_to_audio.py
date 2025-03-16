@@ -48,7 +48,7 @@ def download_audio_from_drive(drive_url, output_audio=f"output_{uuid.uuid4().hex
             print(f"Warning: Failed to delete temporary file {temp_video}: {e}")
         
         # Return success response.
-        return {"status": "success", "message": f"Audio file saved as: {output_audio}"}
+        return {"status": "success", "message": f"Audio file saved as: {output_audio}", "file_path": output_audio}
     
     except Exception as error:
         # Return error response with error details.
