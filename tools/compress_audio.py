@@ -1,48 +1,53 @@
-import uuid
-from pydub import AudioSegment
 import os
+import numpy as np
+from scipy.io import wavfile
 
-def compress_wav(file_path, target_size_mb=50, output_path=f"output_{uuid.uuid4().hex}.wav"):
+def compress_wav(file_path, max_size_bytes=100*1024*1024):
     """
-    Compresses a WAV file to half its size if it's over 150MB.
+    Compresses a .wav file repeatedly by downsampling until its file size is below max_size_bytes.
     
-    Args:
-        file_path (str): Path to the input WAV file.
-        output_path (str, optional): Path to save the compressed WAV file. If None, it overwrites the original.
-        target_size_mb (int, optional): Target size in MB after compression. Defaults to half of 150MB.
+    Each compression iteration takes every other sample and halves the sample rate.
+    The compressed files are saved with an appended suffix indicating the iteration.
+    
+    Parameters:
+        file_path (str): Path to the original .wav file.
+        max_size_bytes (int): Maximum allowed file size in bytes (default 100 MB).
         
     Returns:
-        str: Path to the compressed WAV file.
+        str: The path to the final compressed .wav file.
     """
-    file_size_mb = os.path.getsize(file_path) / (1024 * 1024)  # Convert bytes to MB
+    current_file = file_path
+    iteration = 0
     
-    if file_size_mb <= target_size_mb * 2:
-        print("File is not large enough to compress. No action taken.")
-        return file_path  # Return original file
-    
-    print(f"Original file size: {file_size_mb:.2f} MB")
+    while os.path.getsize(current_file) > max_size_bytes:
+        # Read current WAV file
+        sample_rate, data = wavfile.read(current_file)
+        
+        # Downsample: take every other sample
+        new_data = data[::2]
+        # Halve the sample rate to maintain playback duration
+        new_sample_rate = sample_rate // 2
+        
+        # Create a new file name by appending an iteration marker before the extension.
+        base, ext = os.path.splitext(file_path)
+        new_file = f"{base}_compressed_{iteration}{ext}"
+        
+        # Write the compressed file
+        wavfile.write(new_file, new_sample_rate, new_data)
+        
+        print(f"Iteration {iteration}: Compressed file saved at {new_file} with size {os.path.getsize(new_file) / (1024*1024):.2f} MB")
+        
+        # Prepare for the next iteration if needed
+        if os.path.exists(current_file):
+            os.remove(current_file)
 
-    # Load audio file
-    audio = AudioSegment.from_wav(file_path)
-    
-    # Estimate target bitrate to achieve half the size
-    duration_sec = len(audio) / 1000  
-    target_bitrate = int((target_size_mb * 4 * 1024 * 1024) / duration_sec)  # Convert MB to bits per second
+        current_file = new_file
+        iteration += 1
+        
+    return current_file
 
-    # Export with new bitrate
-    audio.export(output_path, format="wav", bitrate=f"{target_bitrate}k")
-    
-    new_size_mb = os.path.getsize(output_path) / (1024 * 1024)  # Get new size
-    print(f"Compressed file saved: {output_path} ({new_size_mb:.2f} MB)")
-
-    if new_size_mb >= target_size_mb:
-        return compress_wav(output_path, target_size_mb, output_path,)
-    
-    return output_path
-
+# Example usage:
 if __name__ == "__main__":
-    # Replace with the path to your audio file
-    audio_file_path = "output_e4ef7375f8354db59b67c08866726bb9.wav"
-    
-    compressed_file_path = compress_wav(audio_file_path)
-    print("Compression Result:", compressed_file_path)
+    original_file = "example.wav"
+    final_file = compress_wav(original_file)
+    print(f"Final compressed file saved at: {final_file}")
