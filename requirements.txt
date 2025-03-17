@@ -1,0 +1,7 @@
+pydub
+gdown
+requests
+flask
+slack-bolt
+dotenv
+ffmpeg
