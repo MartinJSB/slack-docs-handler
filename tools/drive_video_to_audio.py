@@ -4,7 +4,7 @@ import subprocess
 import uuid
 import gdown
 
-def download_audio_from_drive(drive_url, output_audio=f"output_{uuid.uuid4().hex}.wav"):
+def download_audio_from_drive(drive_url, output_audio=f"tmp/output_{uuid.uuid4().hex}.wav"):
     try:
         # Extract file ID from a typical Google Drive share link.
         file_id_match = re.search(r"/d/([^/]+)", drive_url)
@@ -18,7 +18,7 @@ def download_audio_from_drive(drive_url, output_audio=f"output_{uuid.uuid4().hex
         download_url = f"https://drive.google.com/uc?id={file_id}&export=download"
         
         # Generate a unique temporary file name.
-        temp_video = f"temp_video_{uuid.uuid4().hex}.mp4"
+        temp_video = f"tmp/temp_video_{uuid.uuid4().hex}.mp4"
         
         # Attempt to download the video.
         try:
