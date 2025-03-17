@@ -3,7 +3,7 @@ pydub
 gdown
 requests
 flask
+python-dotenv  
 slack-bolt
-dotenv
-ffmpeg
-numpy
+scipy 
+numpy  
