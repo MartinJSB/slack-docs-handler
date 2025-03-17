@@ -6,6 +6,7 @@ import gdown
 
 def download_audio_from_drive(drive_url, output_audio=f"tmp/output_{uuid.uuid4().hex}.wav"):
     try:
+        os.makedirs("tmp", exist_ok=True)
         # Extract file ID from a typical Google Drive share link.
         file_id_match = re.search(r"/d/([^/]+)", drive_url)
         if file_id_match:
