@@ -5,7 +5,8 @@ from slack_bolt.adapter.flask import SlackRequestHandler
 from dotenv import load_dotenv
 from events import register_events
 
-load_dotenv(dotenv_path="../.env")
+if os.getenv("FLASK_ENV") == "development":
+    load_dotenv(dotenv_path="../.env")
 
 slack_app = App(
     token=os.getenv("SLACK_BOT_TOKEN"),
