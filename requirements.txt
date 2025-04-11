@@ -1,6 +1,6 @@
 gunicorn
-pydub
-gdown
+# pydub
+# gdown
 requests
 flask
 python-dotenv  
